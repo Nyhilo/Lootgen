@@ -1,7 +1,23 @@
 """
-Functions
-    Load file
-    Generate Items
+File Format consists of comma deliminated lines of items to be generated.
+Blank lines and lines starting with # are ignored, for formatting purposes.
+Data lines can have the following formats:
+
+    Itemname
+    Itemname, Commonness
+    Itemname, Commonness, minimum, maximum
+
+Commonness is the number of times that item is put into the item pool.
+The number of items found range from minimum to maximum
+Missing values are assumed to be 1
+
+Example:
+
+    # Common weapons that can be found
+    Stone, 6, 2, 5
+    Hammer
+    Sword, 2
+    Dagger, 4, 1, 2
 """
 
 import os.path
@@ -14,24 +30,31 @@ class Loot:
         self.itemList=[]
 
     def load(self, filename):
+        self.filename = filename
         if not os.path.exists(filename):
-            print("A file named " + filename + " does not exist.")
+            print("\tA file named " + filename + " does not exist.")
         else:
             with open(filename, 'r',newline='') as file:
                 reader = csv.reader(file, delimiter=',', quotechar='|')
                 counter = 0
                 for row in reader:
                     counter += 1
-                    if len(row) == 1:
-                        self.itemList.append([row[0],1,1])
-                    elif len(row) == 2:
-                        for i in range(0,int(row[1])):
+                    try:
+                        if row == [] or row[0][0] == "#":
+                            pass
+                        elif len(row) == 1:
                             self.itemList.append([row[0],1,1])
-                    elif len(row) == 4:
-                        for i in range(0,int(row[1])):
-                            self.itemList.append([row[0],row[2],row[3]])
-                    else:
-                        print("Format error on line " + str(counter) + ". Line not loaded.")
+                        elif len(row) == 2:
+                            for i in range(0,int(row[1])):
+                                self.itemList.append([row[0],1,1])
+                        elif len(row) == 4:
+                            for i in range(0,int(row[1])):
+                                self.itemList.append([row[0],row[2],row[3]])
+                        else:
+                            print("\t! Format error on line {}, '{}' not loaded.".format(counter, row[0]))
+                    except ValueError :
+                        print("\tValue error at "+str(counter))
+            print("\tFinished loading "+filename)
 
     def pick(self, n):
         outlist = []
@@ -49,22 +72,62 @@ def is_number(s):
     except ValueError:
         return False
 
+def clear():
+    import os, platform
+    if platform.system() == 'Windows':
+        _=os.system('cls')
+    else:
+        _=os.system('clear')
+
 def main():
+    """
+    Starts a prompt allowing the user to load loot files and pull random items from them.
+    """
+    clear()             
     running = True
     loot = Loot()
     while running:
-        choice = input('Lootgen> ').lower().split() 
-        if choice[0] == "load":
-            if len(choice) > 1:
-                loot.load(choice[1])
+        args = input( 'Lootgen> ' ).split()
+        args[0] = args[0].lower()
+        if args[0] == "load":
+            if len( args ) > 1:
+                loot.load( args[1] )
             else:
-                print("Please enter a file name after 'load'")
-        elif is_number(choice[0]):
-            items = loot.pick(choice[0])
+                print( "\tPlease enter a file name after 'load'" )
+        elif is_number( args[0] ):
+            print( "\tFound:" )
+            items = loot.pick( args[0] )
             for item in items:
-                print(item)
+                print( "\t\t"+item )
+        elif args[0] == "current":
+            print( "\tCurrent loaded file: "+loot.filename )
+        elif args[0] == "quit":
+            quit()
+        elif args[0] =="format":
+            print("""
+            File Format consists of comma deliminated lines of items to be generated.
+            Blank lines and lines starting with # are ignored, for formatting purposes.
+            Data lines can have the following formats:
+
+                Itemname
+                Itemname, Commonness
+                Itemname, Commonness, minimum, maximum
+
+            Commonness is the number of times that item is put into the item pool.
+            The number of items found range from minimum to maximum
+            Missing values are assumed to be 1
+
+            Example:
+
+                # Common weapons that can be found
+                Stone, 6, 2, 5
+                Hammer
+                Sword, 2
+                Dagger, 4, 1, 2
+            """)
         else:
-            print(choice[0] + " not recognized as a valid command.")     
+            print( "\tAvailable commands: load [file], current, help, format, [number], quit" )   
+        print()  
 
 
 
