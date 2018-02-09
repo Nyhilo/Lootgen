@@ -29,11 +29,16 @@ class Loot:
         self.filename=filename
         self.itemList=[]
 
-    def load(self, filename):
-        self.filename = filename
+    def load(self, filename, fresh=True):
+        if fresh:
+            self.filename = filename
+        else:
+            self.filename += ", " + filename
+
         if not os.path.exists(filename):
             print("\tA file named " + filename + " does not exist.")
         else:
+            if fresh: self.itemList=[]
             with open(filename, 'r',newline='') as file:
                 reader = csv.reader(file, delimiter=',', quotechar='|')
                 counter = 0
@@ -55,6 +60,9 @@ class Loot:
                     except ValueError :
                         print("\tValue error at "+str(counter))
             print("\tFinished loading "+filename)
+
+    def add(self, filename=""):
+        self.load(filename, False)
 
     def pick(self, n):
         outlist = []
@@ -89,21 +97,31 @@ def main():
     while running:
         args = input( 'Lootgen> ' ).split()
         args[0] = args[0].lower()
-        if args[0] == "load":
+        if args[0] == "load" or args[0] == 'l':
             if len( args ) > 1:
                 loot.load( args[1] )
             else:
                 print( "\tPlease enter a file name after 'load'" )
+
+        elif args[0] == "add" or args[0] == 'a':
+            if len( args ) > 1:
+                loot.add( args[1] )
+            else:
+                print( "\tPlease enter a file name after 'add'" )
+
         elif is_number( args[0] ):
             print( "\tFound:" )
             items = loot.pick( args[0] )
             for item in items:
                 print( "\t\t"+item )
-        elif args[0] == "current":
+
+        elif args[0] == "current" or args[0] == 'c':
             print( "\tCurrent loaded file: "+loot.filename )
+
         elif args[0] == "quit":
             quit()
-        elif args[0] =="format":
+
+        elif args[0] =="format" or args[0] == 'f':
             print("""
             File Format consists of comma deliminated lines of items to be generated.
             Blank lines and lines starting with # are ignored, for formatting purposes.
@@ -125,8 +143,18 @@ def main():
                 Sword, 2
                 Dagger, 4, 1, 2
             """)
+
+        elif args[0] == 'help' or args[0] == 'h':
+            print( """\tAvailable commands:
+                [l]oad\t\t[file] | Loads the file into memory
+                [a]dd\t\t[file] | Combines the file with everything currently loaded]
+                [c]urrent\t| Displays the currently loaded files
+                [f]ormat\t| Shows how the source files are formatted
+                [number]\t| Type any number, returns that many items from the currently loaded list
+                [h]elp\t\t| Display this dialog
+                quit\t\t| Close the program""" )
         else:
-            print( "\tAvailable commands: load [file], current, help, format, [number], quit" )   
+            print( "\tIncorrect input. Type 'help' for avaiable commands." )   
         print()  
 
 
